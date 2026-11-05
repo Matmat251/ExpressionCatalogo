@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-burgundy: #8B2643;
+    --brand-burgundy-dark: #6E1A32;
+    --brand-olive: #4E6B32;
+    --brand-olive-dark: #3B5324;
+    --brand-cream: #FAF7F4;
+    --brand-charcoal: #2A2E35;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Expresion's New — Catálogo de Sastres para Dama",
+  "description": "Catálogo de sastrería fina femenina: trajes ejecutivos, blazers y sastres a medida confeccionados con telas de alta calidad en Centro Comercial El Rey.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
