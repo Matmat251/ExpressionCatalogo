@@ -136,14 +136,14 @@ export const SOCIAL_MEDIA: SocialMediaInfo[] = [
   {
     platform: "Instagram",
     handle: "@expresionsnew",
-    url: "https://instagram.com/expresionsnew",
+    url: "https://www.instagram.com/expresionsnew?mdxt=OG93djdlbXpqZTcx",
     icon: "camera",
     desc: "Sesiones fotográficas oficiales, looks corporativos y detalles de acabados de taller.",
   },
   {
     platform: "Facebook",
     handle: "Expresion's New - Sastrería Dama",
-    url: "https://facebook.com/expresionsnew",
+    url: "https://www.facebook.com/share/1EPFZaz5yH/",
     icon: "facebook",
     desc: "Novedades, transmisiones, testimonios de clientas y promociones por temporada.",
   },
