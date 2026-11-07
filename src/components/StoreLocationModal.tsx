@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { STORE_INFO } from '../data/catalog';
 import {
   X,
@@ -32,6 +32,21 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({
   const [appointmentTime, setAppointmentTime] = useState('11:00');
   const [clientName, setClientName] = useState('');
   const [booked, setBooked] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus close button on open without scrolling & handle Escape
+  useEffect(() => {
+    closeButtonRef.current?.focus({ preventScroll: true });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const handleBookVisit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,23 +69,24 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-stone-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="store-modal-title"
+      onClick={onClose}
     >
       <div
-        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-[#FAF7F4]">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#4E6B32]/10 text-[#4E6B32] flex items-center justify-center">
-              <MapPin className="w-4 h-4" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#4E6B32]/10 text-[#4E6B32] flex items-center justify-center">
+              <MapPin className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="store-modal-title" className="font-display font-bold text-lg text-stone-900 leading-tight">
+              <h2 id="store-modal-title" className="font-display font-bold text-lg sm:text-xl text-stone-900 leading-tight">
                 Tienda & Taller de Sastrería
               </h2>
               <span className="text-[11px] text-stone-500">
@@ -80,17 +96,18 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
+            className="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/60 transition-colors cursor-pointer"
             aria-label="Cerrar ventana"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-6 overflow-y-auto overscroll-contain space-y-6">
           
           {/* Main location card */}
           <div className="bg-gradient-to-br from-[#8B2643]/5 via-white to-[#4E6B32]/5 rounded-xl p-5 border border-stone-200 space-y-4">
@@ -227,9 +244,9 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full py-2 bg-[#8B2643] hover:bg-[#721C34] text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  className="w-full py-3 bg-[#8B2643] hover:bg-[#6E1A32] text-white text-xs sm:text-sm font-semibold rounded-full transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-xs min-h-[44px] active:scale-95"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
+                  <MessageCircle className="w-4 h-4" aria-hidden="true" />
                   Confirmar Cita vía WhatsApp
                 </button>
               </form>
@@ -239,18 +256,19 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-stone-200 bg-[#FAF7F4] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-xs text-stone-500 font-medium text-center sm:text-left">
-            ¡Te esperamos en Centro Comercial El REY tda. 342 - D!
+        <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-t border-[#E7E0D8] bg-[#FAF7F4] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-xs text-stone-600 font-medium text-center sm:text-left flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#4E6B32]" aria-hidden="true" />
+            <span>¡Te esperamos en Centro Comercial El REY tda. 342 - D!</span>
           </span>
 
           <a
             href={STORE_INFO.whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#4E6B32] hover:bg-[#3E5528] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-2xs min-h-[42px]"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#4E6B32] hover:bg-[#3D5324] text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-2xs min-h-[44px] active:scale-95"
           >
-            <MessageCircle className="w-4 h-4 shrink-0" />
+            <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Consultar por WhatsApp</span>
           </a>
         </div>

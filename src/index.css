@@ -4,17 +4,104 @@
   :root {
     --brand-burgundy: #8B2643;
     --brand-burgundy-dark: #6E1A32;
+    --brand-burgundy-light: #FBF0F3;
     --brand-olive: #4E6B32;
     --brand-olive-dark: #3B5324;
+    --brand-olive-light: #F2F7ED;
     --brand-cream: #FAF7F4;
-    --brand-charcoal: #2A2E35;
+    --brand-linen: #F5EFEB;
+    --brand-charcoal: #1C1917;
+    --brand-charcoal-muted: #44403C;
+    --brand-gold: #B48238;
+    --brand-border: #E7E0D8;
+    --brand-border-subtle: #F0EAE2;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #1C1917;
+    background-color: #FAF7F4;
   }
 
   h1, h2, h3, .font-display {
     font-family: 'Playfair Display', Georgia, serif;
+    font-feature-settings: "pnum", "lnum";
+  }
+
+  .font-editorial {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  /* Accessible high-contrast focus rings */
+  :focus-visible {
+    outline: 2px solid var(--brand-burgundy);
+    outline-offset: 2px;
+  }
+}
+
+/* Custom luxury scrollbars */
+@media (min-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FAF7F4;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D8D0C5;
+    border-radius: 9999px;
+    border: 2px solid #FAF7F4;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #8B2643;
+  }
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Subtle luxury card shimmer / elevation utilities */
+.luxury-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(231, 224, 216, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(42, 46, 53, 0.04), 0 2px 6px -1px rgba(42, 46, 53, 0.02);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  border-color: rgba(139, 38, 67, 0.35);
+  box-shadow: 0 16px 32px -6px rgba(139, 38, 67, 0.08), 0 6px 12px -2px rgba(42, 46, 53, 0.04);
+  transform: translateY(-2px);
+}
+
+.luxury-glass {
+  background: rgba(250, 247, 244, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(231, 224, 216, 0.8);
+}
+
+/* Reduced motion accessibility check */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

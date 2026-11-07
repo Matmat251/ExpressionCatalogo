@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { calculateTailoringSize, SIZE_CHART } from '../utils/tailoring';
 import { STORE_INFO } from '../data/catalog';
 import { X, Ruler, CheckCircle2, MessageCircle, HelpCircle, Scissors } from 'lucide-react';
@@ -33,6 +33,22 @@ export const SizeCalculatorModal: React.FC<SizeCalculatorModalProps> = ({
     hip: hipNum,
   });
 
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus close button on open without scrolling & handle Escape
+  useEffect(() => {
+    closeButtonRef.current?.focus({ preventScroll: true });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   const whatsappMeasurementUrl = `https://wa.me/51978095313?text=${encodeURIComponent(
     `Hola Expresion's New! He calculado mis medidas en su catálogo web:
 • Busto: ${bustNum} cm
@@ -45,23 +61,24 @@ Quisiera agendar una prueba de entallado o consultar qué modelos tienen listos 
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-stone-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="size-calc-title"
+      onClick={onClose}
     >
       <div
-        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-[#FAF7F4]">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#8B2643]/10 text-[#8B2643] flex items-center justify-center">
-              <Ruler className="w-4 h-4" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#8B2643]/10 text-[#8B2643] flex items-center justify-center">
+              <Ruler className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="size-calc-title" className="font-display font-bold text-lg text-stone-900 leading-tight">
+              <h2 id="size-calc-title" className="font-display font-bold text-lg sm:text-xl text-stone-900 leading-tight">
                 Calculadora de Talla & Medidas Sastre
               </h2>
               <span className="text-[11px] text-stone-500">
@@ -71,17 +88,18 @@ Quisiera agendar una prueba de entallado o consultar qué modelos tienen listos 
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
+            className="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/60 transition-colors cursor-pointer"
             aria-label="Cerrar calculadora"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-6 overflow-y-auto overscroll-contain space-y-6">
           
           {/* Measurement input fields */}
           <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
@@ -213,18 +231,19 @@ Quisiera agendar una prueba de entallado o consultar qué modelos tienen listos 
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-stone-200 bg-[#FAF7F4] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-xs text-stone-500 text-center sm:text-left">
-            ¿Dudas? Nuestro sastre maestro te asiste directamente.
+        <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-t border-[#E7E0D8] bg-[#FAF7F4] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-xs text-stone-600 text-center sm:text-left flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#4E6B32]" aria-hidden="true" />
+            <span>¿Dudas con tu talla? Nuestro sastre maestro te asiste en vivo.</span>
           </span>
 
           <a
             href={whatsappMeasurementUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#4E6B32] hover:bg-[#3E5528] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-2xs min-h-[42px]"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#4E6B32] hover:bg-[#3D5324] text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-2xs min-h-[44px] active:scale-95"
           >
-            <MessageCircle className="w-4 h-4 shrink-0" />
+            <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Enviar medidas por WhatsApp</span>
           </a>
         </div>

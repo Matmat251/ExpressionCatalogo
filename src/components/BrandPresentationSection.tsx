@@ -49,20 +49,20 @@ export const BrandPresentationSection: React.FC<BrandPresentationSectionProps> =
   const [activeTab, setActiveTab] = useState<'concepto' | 'publico' | 'ventas' | 'comercial' | 'redes'>('concepto');
 
   return (
-    <section id="sobre-nosotros" className="py-12 sm:py-16 bg-white border-b border-stone-200">
+    <section id="sobre-nosotros" className="py-14 sm:py-20 bg-white border-b border-[#E7E0D8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Centered Brand Presentation Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 space-y-4">
-          <div className="inline-block p-4 sm:p-6 rounded-2xl bg-[#FAF7F4] border border-stone-200/80 shadow-xs">
+        <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
+          <div className="inline-block p-5 sm:p-7 rounded-3xl bg-[#FAF7F4] border border-[#E7E0D8] shadow-sm">
             <ExpresionsLogo size="xl" showSlogan={true} />
           </div>
 
           <div>
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#8B2643] block">
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-[#8B2643] block">
               Confección Fina de Sastres Femeninos
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-stone-900 tracking-tight mt-1">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-[#1C1917] tracking-tight mt-1.5">
               {BRAND_CONCEPT.title}
             </h2>
           </div>
@@ -72,21 +72,21 @@ export const BrandPresentationSection: React.FC<BrandPresentationSectionProps> =
           </p>
 
           <div className="flex items-center justify-center gap-2 text-xs font-semibold text-[#8B2643]">
-            <Heart className="w-3.5 h-3.5 fill-[#8B2643]" />
-            <span className="italic">{STORE_INFO.tagline}</span>
+            <Heart className="w-3.5 h-3.5 fill-[#8B2643]" aria-hidden="true" />
+            <span className="font-editorial italic text-base">{STORE_INFO.tagline}</span>
           </div>
         </div>
 
         {/* Section Navigation Tabs (Zero-Pill: functional segmented controls with mobile swipe) */}
-        <div className="flex items-center justify-start sm:justify-center mb-8 overflow-x-auto snap-x scrollbar-none px-1 -mx-2 sm:mx-0 sm:px-0">
-          <div className="inline-flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200/70 shrink-0">
+        <div className="flex items-center justify-start sm:justify-center mb-10 overflow-x-auto snap-x scrollbar-none px-1 -mx-2 sm:mx-0 sm:px-0">
+          <div className="inline-flex items-center gap-1.5 p-1.5 bg-[#F4EFEA] border border-[#E7E0D8] rounded-2xl shrink-0 shadow-2xs">
             <button
               type="button"
               onClick={() => setActiveTab('concepto')}
-              className={`px-3 sm:px-3.5 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start ${
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start active:scale-98 ${
                 activeTab === 'concepto'
-                  ? 'bg-white text-stone-900 shadow-xs font-semibold'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1C1917] shadow-sm font-bold border border-[#E7E0D8]/60'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
               }`}
             >
               1. Concepto & Taller
@@ -94,10 +94,10 @@ export const BrandPresentationSection: React.FC<BrandPresentationSectionProps> =
             <button
               type="button"
               onClick={() => setActiveTab('publico')}
-              className={`px-3 sm:px-3.5 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start ${
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start active:scale-98 ${
                 activeTab === 'publico'
-                  ? 'bg-white text-stone-900 shadow-xs font-semibold'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1C1917] shadow-sm font-bold border border-[#E7E0D8]/60'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
               }`}
             >
               2. Público Objetivo
@@ -105,10 +105,10 @@ export const BrandPresentationSection: React.FC<BrandPresentationSectionProps> =
             <button
               type="button"
               onClick={() => setActiveTab('ventas')}
-              className={`px-3 sm:px-3.5 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start ${
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start active:scale-98 ${
                 activeTab === 'ventas'
-                  ? 'bg-white text-stone-900 shadow-xs font-semibold'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1C1917] shadow-sm font-bold border border-[#E7E0D8]/60'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
               }`}
             >
               3. Tipos de Venta
@@ -116,10 +116,10 @@ export const BrandPresentationSection: React.FC<BrandPresentationSectionProps> =
             <button
               type="button"
               onClick={() => setActiveTab('comercial')}
-              className={`px-3 sm:px-3.5 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start ${
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start active:scale-98 ${
                 activeTab === 'comercial'
-                  ? 'bg-white text-stone-900 shadow-xs font-semibold'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1C1917] shadow-sm font-bold border border-[#E7E0D8]/60'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
               }`}
             >
               4. Datos Comerciales & Envíos
@@ -127,10 +127,10 @@ export const BrandPresentationSection: React.FC<BrandPresentationSectionProps> =
             <button
               type="button"
               onClick={() => setActiveTab('redes')}
-              className={`px-3 sm:px-3.5 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start ${
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap cursor-pointer shrink-0 snap-start active:scale-98 ${
                 activeTab === 'redes'
-                  ? 'bg-white text-stone-900 shadow-xs font-semibold'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1C1917] shadow-sm font-bold border border-[#E7E0D8]/60'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
               }`}
             >
               5. Redes Sociales

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CartItem, calculateCartTotals, buildWhatsAppQuoteUrl } from '../utils/tailoring';
 import { STORE_INFO } from '../data/catalog';
 import {
@@ -43,6 +43,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [customerPhone, setCustomerPhone] = useState('');
   const [orderType, setOrderType] = useState<'menor' | 'mayor' | 'confeccion'>('menor');
   const [customerNotes, setCustomerNotes] = useState('');
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus close button on open without scrolling & handle Escape
+  useEffect(() => {
+    closeButtonRef.current?.focus({ preventScroll: true });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const totals = calculateCartTotals(items);
 
@@ -56,23 +71,24 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-hidden bg-stone-900/60 backdrop-blur-xs flex justify-end"
+      className="fixed inset-0 z-50 overflow-hidden overscroll-contain bg-stone-950/65 backdrop-blur-sm flex justify-end animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cart-title"
+      onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-stone-200"
+        className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-stone-200 animate-in slide-in-from-right duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-stone-200 bg-[#FAF7F4] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#8B2643]/10 text-[#8B2643] flex items-center justify-center">
-              <ShoppingBag className="w-4 h-4" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#8B2643]/10 text-[#8B2643] flex items-center justify-center">
+              <ShoppingBag className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="cart-title" className="font-display font-bold text-base text-stone-900">
+              <h2 id="cart-title" className="font-display font-bold text-base sm:text-lg text-stone-900">
                 Mi Cotización de Prendas
               </h2>
               <span className="text-[11px] text-stone-500">
@@ -82,17 +98,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
+            className="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/60 transition-colors cursor-pointer"
             aria-label="Cerrar cotizador"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Items List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4">
           {items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-500">
               <div className="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center mb-3 text-stone-400">
@@ -291,16 +308,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Footer with Totals and WhatsApp Dispatch */}
         {items.length > 0 && (
-          <div className="p-4 sm:p-5 border-t border-stone-200 bg-[#FAF7F4] space-y-3">
-            <div className="bg-white p-3 rounded-xl border border-stone-200 text-xs text-stone-600 space-y-1.5 shadow-2xs">
+          <div className="p-4 sm:p-5 border-t border-[#E7E0D8] bg-[#FAF7F4] space-y-3.5">
+            <div className="bg-white p-3.5 rounded-2xl border border-[#E7E0D8] text-xs text-stone-600 space-y-1.5 shadow-2xs">
               <div className="flex justify-between items-center font-bold text-stone-900">
                 <span>Total de prendas a cotizar:</span>
-                <span className="font-mono tabular-nums text-sm text-[#8B2643] bg-rose-50 px-2 py-0.5 rounded">
+                <span className="font-mono tabular-nums text-sm font-bold text-[#8B2643] bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
                   {totals.itemCount} {totals.itemCount === 1 ? 'prenda' : 'prendas'}
                 </span>
               </div>
-              <p className="text-[11px] text-stone-500 leading-snug">
-                Al enviar por WhatsApp, el taller de Expresion's New te responderá con la cotización exacta según la modalidad seleccionada (por mayor, menor o confección).
+              <p className="text-[11px] text-stone-500 leading-relaxed">
+                Al enviar por WhatsApp, el taller de Expresion's New responderá al instante con la cotización exacta según la modalidad seleccionada (por mayor, menor o confección).
               </p>
             </div>
 
@@ -308,13 +325,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3 bg-[#4E6B32] hover:bg-[#3E5528] text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
+              className="w-full py-3.5 bg-[#4E6B32] hover:bg-[#3D5324] text-white text-xs sm:text-sm font-semibold rounded-full transition-all duration-200 flex items-center justify-center gap-2 shadow-xs whitespace-nowrap active:scale-95 min-h-[44px]"
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4" aria-hidden="true" />
               <span>Enviar Cotización a WhatsApp (978 095 313)</span>
             </a>
 
-            <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
+            <div className="flex items-center justify-between text-[11px] text-stone-500 pt-0.5 px-1">
               <span>📍 C.C. El REY tda. 342 - D</span>
               <button
                 type="button"

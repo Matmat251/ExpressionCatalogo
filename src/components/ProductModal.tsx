@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ProductSuit, BodyMeasurements } from '../utils/tailoring';
 import { SuitVisual } from './SuitVisual';
 import {
@@ -64,6 +64,53 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [hip, setHip] = useState('');
 
   const [addedToast, setAddedToast] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus close button on open (preventScroll: true) and handle Escape + Arrow Left/Right gallery navigation
+  useEffect(() => {
+    closeButtonRef.current?.focus({ preventScroll: true });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'ArrowRight') {
+        // Navigate gallery or multi-angle photos forward
+        if (product.galleryImages && product.galleryImages.length > 1) {
+          const currentImg = previewImage || selectedColor.image || product.primaryImage || '';
+          const currentIdx = product.galleryImages.indexOf(currentImg);
+          const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % product.galleryImages.length : 0;
+          setPreviewImage(product.galleryImages[nextIdx]);
+        } else if (selectedColor.angles) {
+          const angles: ('frontal' | 'lado' | 'trasera')[] = ['frontal', 'lado', 'trasera'];
+          const currentIdx = angles.indexOf(selectedAngle);
+          const nextAngle = angles[(currentIdx + 1) % angles.length];
+          setSelectedAngle(nextAngle);
+          setPreviewImage(selectedColor.angles[nextAngle]);
+        }
+      } else if (e.key === 'ArrowLeft') {
+        // Navigate gallery or multi-angle photos backward
+        if (product.galleryImages && product.galleryImages.length > 1) {
+          const currentImg = previewImage || selectedColor.image || product.primaryImage || '';
+          const currentIdx = product.galleryImages.indexOf(currentImg);
+          const prevIdx = currentIdx >= 0
+            ? (currentIdx - 1 + product.galleryImages.length) % product.galleryImages.length
+            : product.galleryImages.length - 1;
+          setPreviewImage(product.galleryImages[prevIdx]);
+        } else if (selectedColor.angles) {
+          const angles: ('frontal' | 'lado' | 'trasera')[] = ['frontal', 'lado', 'trasera'];
+          const currentIdx = angles.indexOf(selectedAngle);
+          const prevAngle = angles[(currentIdx - 1 + angles.length) % angles.length];
+          setSelectedAngle(prevAngle);
+          setPreviewImage(selectedColor.angles[prevAngle]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, product, selectedColor, selectedAngle, previewImage]);
 
   const handleAdd = () => {
     const customMeasurements: BodyMeasurements | undefined =
@@ -111,38 +158,47 @@ ${showMeasurements && bust ? `• Medidas: Busto ${bust}cm, Cintura ${waist}cm, 
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-stone-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-suit-title"
+      onClick={onClose}
     >
       <div
-        className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative bg-white w-full max-w-4xl rounded-xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-[#FAF7F4]">
           <div>
-            <span className="text-[11px] font-semibold text-[#8B2643] uppercase tracking-wider block">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-[#8B2643] uppercase tracking-[0.16em] block">
               Sastrería Fina Femenina · Expresion's New
             </span>
-            <h2 id="modal-suit-title" className="font-display font-bold text-xl sm:text-2xl text-stone-900 leading-tight">
-              {product.name}
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 id="modal-suit-title" className="font-display font-bold text-xl sm:text-2xl text-stone-900 leading-tight">
+                {product.name}
+              </h2>
+              {product.galleryImages && product.galleryImages.length > 1 && (
+                <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                  ← / → fotos
+                </span>
+              )}
+            </div>
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/60 transition-colors cursor-pointer"
             aria-label="Cerrar ventana"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Modal Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             
             {/* Left Column: Visual Rendering and Tailoring Callouts */}
@@ -157,29 +213,13 @@ ${showMeasurements && bust ? `• Medidas: Busto ${bust}cm, Cintura ${waist}cm, 
                 onAngleChange={(ang) => setSelectedAngle(ang)}
               />
 
-              {/* Dedicated 360° Angle Controls for Garments with Multiple Studio Angles */}
+              {/* Selector de ángulos discreto únicamente si la prenda cuenta con fotografía multi-ángulo (Pantalones) */}
               {selectedColor.angles && (
-                <div className="bg-[#FAF7F4] border border-stone-200 rounded-xl p-3 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-[#8B2643] flex items-center gap-1.5">
-                      <RotateCw className="w-3.5 h-3.5 text-amber-600 animate-spin" style={{ animationDuration: '4s' }} />
-                      Ángulos 360° en color <strong>{selectedColor.name}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewImage(null);
-                        setSelectedAngle('frontal');
-                      }}
-                      className="text-[11px] font-semibold text-[#8B2643] hover:underline cursor-pointer flex items-center gap-1"
-                      title="Activar rotación automática continua"
-                    >
-                      <RotateCw className="w-3 h-3" />
-                      Auto-rotar
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-1.5">
+                <div className="flex items-center justify-between bg-stone-50 border border-stone-200/80 rounded-xl p-2.5">
+                  <span className="text-xs text-stone-600 font-medium">
+                    Ángulo de corte ({selectedColor.name}):
+                  </span>
+                  <div className="flex items-center gap-1.5">
                     {(['frontal', 'lado', 'trasera'] as const).map((angleKey) => {
                       const label = angleKey === 'frontal' ? 'Frontal' : angleKey === 'lado' ? 'De Lado' : 'Espalda';
                       const imgUrl = selectedColor.angles![angleKey];
@@ -192,13 +232,13 @@ ${showMeasurements && bust ? `• Medidas: Busto ${bust}cm, Cintura ${waist}cm, 
                             setPreviewImage(imgUrl);
                             setSelectedAngle(angleKey);
                           }}
-                          className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                             isCurrent
                               ? 'bg-[#8B2643] text-white shadow-xs'
-                              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
+                              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
                           }`}
                         >
-                          <span>{label}</span>
+                          {label}
                         </button>
                       );
                     })}
@@ -206,11 +246,11 @@ ${showMeasurements && bust ? `• Medidas: Busto ${bust}cm, Cintura ${waist}cm, 
                 </div>
               )}
 
-              {/* Gallery of photos for products with real workshop/catalog images */}
+              {/* Gallery of photos for products with multiple color/chaleco images */}
               {product.galleryImages && product.galleryImages.length > 1 && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-[11px] text-stone-500 font-medium">
-                    <span>Galería de fotos ({product.galleryImages.length} vistas reales)</span>
+                    <span>Galería de fotos ({product.galleryImages.length} fotos)</span>
                     <span className="text-[#8B2643] text-[10px]">Click para alternar vista</span>
                   </div>
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -437,35 +477,44 @@ ${showMeasurements && bust ? `• Medidas: Busto ${bust}cm, Cintura ${waist}cm, 
               {/* 1. Color Selector */}
               <div>
                 <label className="block text-xs font-semibold text-stone-800 mb-2">
-                  Color: <span className="text-[#8B2643]">{selectedColor.name}</span>
+                  Color seleccionado: <strong className="text-[#8B2643] font-bold">{selectedColor.name}</strong>
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {product.colors.map((c) => (
-                    <button
-                      key={c.name}
-                      type="button"
-                      onClick={() => {
-                        setSelectedColor(c);
-                        if (c.angles) {
-                          setPreviewImage(null);
-                          setSelectedAngle('frontal');
-                        } else {
-                          setPreviewImage(c.image || null);
-                        }
-                      }}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                        selectedColor.name === c.name
-                          ? 'border-[#8B2643] bg-rose-50/50 text-[#8B2643] ring-1 ring-[#8B2643]'
-                          : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-stone-300"
-                        style={{ backgroundColor: c.hex }}
-                      />
-                      <span>{c.name}</span>
-                    </button>
-                  ))}
+                  {product.colors.map((c) => {
+                    const isSelected = selectedColor.name === c.name;
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setSelectedColor(c);
+                          if (c.angles) {
+                            setPreviewImage(null);
+                            setSelectedAngle('frontal');
+                          } else {
+                            setPreviewImage(c.image || null);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-[#8B2643] bg-rose-50/60 text-[#8B2643] ring-1 ring-[#8B2643] font-semibold'
+                            : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                        }`}
+                      >
+                        <span
+                          className={`w-3.5 h-3.5 rounded-full border border-stone-300 shrink-0 ${
+                            isSelected ? 'ring-2 ring-[#8B2643]/30 scale-105' : ''
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                        />
+                        <span>{c.name}</span>
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-[#8B2643] shrink-0" aria-hidden="true" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -572,29 +621,30 @@ ${showMeasurements && bust ? `• Medidas: Busto ${bust}cm, Cintura ${waist}cm, 
         </div>
 
         {/* Modal Footer Bar */}
-        <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-stone-200 bg-[#FAF7F4] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="text-xs text-stone-500 text-center sm:text-left">
-            📍 Tienda: <strong>C.C. El REY tda. 342 - D</strong>
+        <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-t border-[#E7E0D8] bg-[#FAF7F4] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="text-xs text-stone-600 text-center sm:text-left flex items-center justify-center sm:justify-start gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#4E6B32]" aria-hidden="true" />
+            <span>Tienda: <strong>C.C. El REY tda. 342 - D</strong> (Gamarra)</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <a
               href={whatsappDirectUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-[#4E6B32] hover:bg-[#3E5528] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-2xs whitespace-nowrap min-h-[42px]"
+              className="inline-flex items-center justify-center gap-2 bg-[#4E6B32] hover:bg-[#3D5324] text-white text-xs sm:text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 shadow-2xs whitespace-nowrap min-h-[44px] active:scale-95"
             >
-              <MessageCircle className="w-4 h-4 shrink-0" />
+              <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Pedir por WhatsApp</span>
             </a>
 
             <button
               type="button"
               onClick={handleAdd}
-              className="inline-flex items-center justify-center gap-2 bg-[#8B2643] hover:bg-[#721C34] text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-xs whitespace-nowrap cursor-pointer min-h-[42px]"
+              className="inline-flex items-center justify-center gap-2 bg-[#8B2643] hover:bg-[#6E1A32] text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-sm whitespace-nowrap cursor-pointer min-h-[44px] active:scale-95"
             >
-              <ShoppingBag className="w-4 h-4 shrink-0" />
-              <span>{addedToast ? '¡Agregado!' : 'Agregar a Cotización'}</span>
+              <ShoppingBag className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{addedToast ? '¡Agregado a tu Cotización!' : 'Agregar a Cotización'}</span>
             </button>
           </div>
         </div>

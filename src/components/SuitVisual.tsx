@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ProductSuit } from '../utils/tailoring';
-import { RotateCw, Play, Pause } from 'lucide-react';
+import { RotateCw, Play, Pause, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface SuitVisualProps {
   product: ProductSuit;
@@ -16,6 +16,7 @@ interface SuitVisualProps {
   highlightPockets?: boolean;
   selectedAngle?: 'frontal' | 'lado' | 'trasera';
   onAngleChange?: (angle: 'frontal' | 'lado' | 'trasera') => void;
+  showZoomControls?: boolean;
 }
 
 export const SuitVisual: React.FC<SuitVisualProps> = ({
@@ -48,27 +49,42 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
   const activeColorObj =
     product.colors.find((c) => c.hex === activeColorHex) || product.colors[0];
 
-  // Dynamic angles support (e.g. Pantalón Lady Luna with 3 angles: frontal, lado, trasera)
-  const anglesList = activeColorObj?.angles
+  // ONLY the 4 pants models have real multi-angle photographs (frontal, lado, trasera)
+  const hasRealAngles = Boolean(activeColorObj?.angles);
+
+  const anglesList = hasRealAngles
     ? [
-        { key: 'frontal' as const, label: 'Frontal', src: activeColorObj.angles.frontal },
-        { key: 'lado' as const, label: 'De Lado', src: activeColorObj.angles.lado },
-        { key: 'trasera' as const, label: 'Trasera', src: activeColorObj.angles.trasera },
+        { key: 'frontal' as const, label: 'Frontal', src: activeColorObj!.angles!.frontal },
+        { key: 'lado' as const, label: 'De Lado', src: activeColorObj!.angles!.lado },
+        { key: 'trasera' as const, label: 'Trasera', src: activeColorObj!.angles!.trasera },
       ]
     : null;
 
   const [activeAngleIndex, setActiveAngleIndex] = useState(0);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
 
-  // When active color changes, reset angle to frontal and enable auto rotation
+  // Zoom & Pan state (only active in 'detail' modal aspect)
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Pointer dragging tracking
+  const [isPointerDown, setIsPointerDown] = useState(false);
+  const pointerStartRef = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
+  const lastPointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastTapTimeRef = useRef<number>(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  // Reset angle & zoom on color change
   useEffect(() => {
     setActiveAngleIndex(0);
-    if (anglesList) {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    if (hasRealAngles) {
       setIsAutoRotating(true);
     }
-  }, [activeColorHex]);
+  }, [activeColorHex, hasRealAngles]);
 
-  // Listen to external selectedAngle override if provided
+  // Listen to external selectedAngle override (from ProductModal)
   useEffect(() => {
     if (selectedAngle && anglesList) {
       const idx = anglesList.findIndex((a) => a.key === selectedAngle);
@@ -77,18 +93,118 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
         setIsAutoRotating(false);
       }
     }
-  }, [selectedAngle]);
+  }, [selectedAngle, anglesList]);
 
-  // Automatic angle cycling interval (1.8s per angle)
+  // Auto-rotation interval for garments with real angles (1.8s)
   useEffect(() => {
-    if (!anglesList || !isAutoRotating || imageOverride) return;
+    if (!anglesList || !isAutoRotating || imageOverride || zoomLevel > 1) return;
 
     const interval = setInterval(() => {
       setActiveAngleIndex((prev) => (prev + 1) % anglesList.length);
     }, 1800);
 
     return () => clearInterval(interval);
-  }, [anglesList, isAutoRotating, imageOverride]);
+  }, [anglesList, isAutoRotating, imageOverride, zoomLevel]);
+
+  // Zoom controls (only in detail aspect)
+  const handleZoomIn = () => {
+    setIsAutoRotating(false);
+    setZoomLevel((prev) => (prev < 1.6 ? 1.8 : 2.5));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => {
+      if (prev > 2.0) return 1.8;
+      setPanOffset({ x: 0, y: 0 });
+      return 1;
+    });
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const toggleZoom = () => {
+    if (aspect !== 'detail') return;
+    if (zoomLevel > 1) {
+      handleResetZoom();
+    } else {
+      setIsAutoRotating(false);
+      setZoomLevel(1.8);
+    }
+  };
+
+  // Pointer interactions
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    setIsPointerDown(true);
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch (_) {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPointerDown) return;
+
+    if (aspect === 'detail' && zoomLevel > 1) {
+      // Pan mode
+      const dx = e.clientX - lastPointerRef.current.x;
+      const dy = e.clientY - lastPointerRef.current.y;
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+
+      const maxPanX = (zoomLevel - 1) * 140;
+      const maxPanY = (zoomLevel - 1) * 170;
+
+      setPanOffset((prev) => ({
+        x: Math.max(-maxPanX, Math.min(maxPanX, prev.x + dx)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, prev.y + dy)),
+      }));
+    } else if (anglesList) {
+      // Horizontal swipe to change angle on real multi-angle garments
+      const deltaX = e.clientX - pointerStartRef.current.x;
+      if (Math.abs(deltaX) > 8) {
+        setIsAutoRotating(false);
+      }
+      if (deltaX > 35) {
+        const nextIdx = (activeAngleIndex - 1 + anglesList.length) % anglesList.length;
+        setActiveAngleIndex(nextIdx);
+        if (onAngleChange) onAngleChange(anglesList[nextIdx].key);
+        pointerStartRef.current.x = e.clientX;
+      } else if (deltaX < -35) {
+        const nextIdx = (activeAngleIndex + 1) % anglesList.length;
+        setActiveAngleIndex(nextIdx);
+        if (onAngleChange) onAngleChange(anglesList[nextIdx].key);
+        pointerStartRef.current.x = e.clientX;
+      }
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPointerDown) return;
+    setIsPointerDown(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const now = Date.now();
+    const moveDist = Math.hypot(
+      e.clientX - pointerStartRef.current.x,
+      e.clientY - pointerStartRef.current.y
+    );
+
+    // Double-tap zoom in detail modal
+    if (aspect === 'detail' && moveDist < 8 && now - pointerStartRef.current.time < 300) {
+      if (now - lastTapTimeRef.current < 320) {
+        toggleZoom();
+        lastTapTimeRef.current = 0;
+        return;
+      }
+      lastTapTimeRef.current = now;
+    }
+  };
 
   const currentAngleObj = anglesList ? anglesList[activeAngleIndex] : null;
   const activeImage =
@@ -97,11 +213,23 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
     product.primaryImage;
 
   const containerHeight =
-    aspect === 'hero' ? 'h-80 sm:h-96 lg:h-[430px]' : aspect === 'detail' ? 'h-80 sm:h-96' : 'h-64 sm:h-72';
+    aspect === 'hero'
+      ? 'h-80 sm:h-96 lg:h-[430px]'
+      : aspect === 'detail'
+      ? 'h-80 sm:h-96'
+      : 'h-64 sm:h-72';
+
+  const transformStyle: React.CSSProperties = {
+    transform:
+      zoomLevel > 1
+        ? `translate3d(${panOffset.x}px, ${panOffset.y}px, 0px) scale(${zoomLevel})`
+        : undefined,
+    transition: isPointerDown ? 'none' : 'transform 0.25s ease-out',
+  };
 
   return (
     <div
-      className={`relative w-full ${containerHeight} overflow-hidden rounded-xl bg-gradient-to-b from-[#FBF9F7] via-[#F4EFEA] to-[#ECE5DC] flex items-center justify-center p-3 group select-none ${className}`}
+      className={`relative w-full ${containerHeight} overflow-hidden rounded-xl bg-gradient-to-b from-[#FBF9F7] via-[#F4EFEA] to-[#ECE5DC] flex items-center justify-center p-3 select-none ${className}`}
       data-testid={`suit-visual-${product.id}`}
     >
       {/* Background grid texture */}
@@ -113,18 +241,18 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
         }}
       />
 
-      {/* Floating 360° Angle Auto-Rotation Badge & Controls for multi-angle garments */}
+      {/* Discrete real angles indicator ONLY on the 4 pants models with 3 real photos */}
       {anglesList && (
         <div
-          className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 bg-stone-900/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-md text-white text-[11px] border border-white/20 select-none animate-fadeIn"
+          className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 bg-stone-900/80 backdrop-blur-xs px-2.5 py-1 rounded-full text-white text-[11px] border border-white/15 select-none"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => setIsAutoRotating(!isAutoRotating)}
             className="p-0.5 hover:text-amber-300 transition-colors cursor-pointer flex items-center gap-1"
-            title={isAutoRotating ? 'Pausar rotación automática' : 'Reanudar rotación automática'}
-            aria-label={isAutoRotating ? 'Pausar rotación automática' : 'Reanudar rotación automática'}
+            title={isAutoRotating ? 'Pausar rotación' : 'Reanudar rotación'}
+            aria-label={isAutoRotating ? 'Pausar rotación' : 'Reanudar rotación'}
           >
             <RotateCw
               className={`w-3 h-3 text-amber-400 ${isAutoRotating ? 'animate-spin' : ''}`}
@@ -137,7 +265,7 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
             )}
           </button>
 
-          <span className="font-semibold text-amber-300 tracking-wide text-[10px]">
+          <span className="font-medium text-amber-300 text-[10px]">
             {currentAngleObj?.label}
           </span>
 
@@ -151,9 +279,9 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
                   setIsAutoRotating(false);
                   if (onAngleChange) onAngleChange(angle.key);
                 }}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold transition-all cursor-pointer ${
                   idx === activeAngleIndex && !imageOverride
-                    ? 'bg-amber-400 text-stone-950 shadow-xs scale-105'
+                    ? 'bg-amber-400 text-stone-950 shadow-xs'
                     : 'bg-white/10 hover:bg-white/25 text-stone-300'
                 }`}
                 title={`Ver ángulo ${angle.label}`}
@@ -165,19 +293,37 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
         </div>
       )}
 
-      {/* Real Photograph from User's Drive / Workshop */}
-      {activeImage ? (
-        <div className="relative w-full h-full flex items-center justify-center p-1">
-          <img
-            key={activeImage}
-            src={activeImage}
-            alt={`${product.name} en ${activeColorObj?.name || 'taller'} - vista ${currentAngleObj?.label || 'oficial'}`}
-            className="h-full w-full object-contain object-center transition-all duration-300 group-hover:scale-[1.04] drop-shadow-sm animate-fadeIn"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-      ) : (
+      {/* Main Image Viewport with clean display and pan support in detail aspect */}
+      <div
+        ref={viewportRef}
+        className={`relative w-full h-full flex items-center justify-center overflow-hidden touch-none select-none ${
+          aspect === 'detail' && zoomLevel > 1
+            ? (isPointerDown ? 'cursor-grabbing' : 'cursor-grab')
+            : anglesList
+            ? 'cursor-ew-resize'
+            : ''
+        }`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onDoubleClick={toggleZoom}
+      >
+        <div
+          className="w-full h-full flex items-center justify-center pointer-events-none"
+          style={transformStyle}
+        >
+          {activeImage ? (
+            <img
+              key={activeImage}
+              src={activeImage}
+              alt={`${product.name} en ${activeColorObj?.name || 'taller'} - vista ${currentAngleObj?.label || 'frontal'}`}
+              className="h-full w-full object-contain object-center drop-shadow-sm select-none"
+              draggable={false}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
         /* Main SVG Vector Fashion Tailoring Silhouette for items pending photography */
         <svg
           className="h-full w-auto max-w-[90%] filter drop-shadow-md transition-transform duration-300 group-hover:scale-[1.02]"
@@ -408,25 +554,58 @@ export const SuitVisual: React.FC<SuitVisualProps> = ({
         )}
       </svg>
     )}
+        </div>
+      </div>
 
-      {/* Badges from the flyer */}
-      <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5 pointer-events-none">
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#2A2E35] bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-xs border border-stone-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#8B2643]" />
-          {product.cut}
-        </span>
-        {product.details?.pockets && (
-          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-[#2A2E35] bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-xs border border-stone-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4E6B32]" />
-            Bolsillos funcionales
+      {/* Discrete zoom controls ONLY in ProductModal (aspect === 'detail') */}
+      {aspect === 'detail' && (
+        <div
+          className="absolute bottom-3 right-3 z-20 flex items-center gap-1 bg-stone-900/80 backdrop-blur-xs px-1.5 py-0.5 rounded-full text-white text-[10px] select-none border border-white/15 shadow-xs"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            className="p-1 hover:text-amber-300 transition-colors cursor-pointer"
+            title="Acercar zoom"
+            aria-label="Acercar zoom"
+          >
+            <ZoomIn className="w-3.5 h-3.5 text-stone-200" />
+          </button>
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            className="p-1 hover:text-amber-300 transition-colors cursor-pointer"
+            title="Alejar zoom"
+            aria-label="Alejar zoom"
+          >
+            <ZoomOut className="w-3.5 h-3.5 text-stone-200" />
+          </button>
+          {zoomLevel > 1 && (
+            <button
+              type="button"
+              onClick={handleResetZoom}
+              className="px-1.5 py-0.5 text-[9px] font-bold text-amber-300 hover:text-white cursor-pointer"
+              title="Restablecer zoom a 1x"
+            >
+              {zoomLevel.toFixed(1)}x
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Subtle details tag ONLY on detail/hero aspect (clean and clear on card) */}
+      {aspect !== 'card' && (
+        <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5 pointer-events-none z-10">
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#2A2E35] bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-xs border border-stone-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#8B2643]" />
+            {product.cut}
           </span>
-        )}
-      </div>
-
-      {/* Floating fabric tag */}
-      <div className="absolute bottom-3 right-3 text-[10px] font-medium text-[#555] bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-xs border border-stone-200 pointer-events-none">
-        {product.fabrics[0]}
-      </div>
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-xs border border-stone-200">
+            {product.fabrics[0]}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

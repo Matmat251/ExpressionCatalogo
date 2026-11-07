@@ -20,9 +20,9 @@ export const Footer: React.FC<FooterProps> = ({
   onSelectCategory,
 }) => {
   return (
-    <footer className="bg-[#24262B] text-stone-300 pt-12 pb-8 border-t border-stone-800">
+    <footer className="bg-[#161514] text-stone-300 pt-14 pb-10 border-t border-stone-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-10 border-b border-stone-700/80">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-12 border-b border-stone-800">
           
           {/* Brand Info & Social Media */}
           <div className="lg:col-span-5 space-y-4">
@@ -34,14 +34,14 @@ export const Footer: React.FC<FooterProps> = ({
               Sastrería fina femenina y taller de confección en Gamarra. Especialistas en corte princesa con calidad Gazú y lino para ejecutivas, abogadas y emprendedoras.
             </p>
 
-            <div className="inline-flex items-center gap-1.5 text-xs text-rose-300 font-medium">
-              <Heart className="w-3.5 h-3.5 fill-rose-300" />
-              <span>{STORE_INFO.tagline}</span>
+            <div className="inline-flex items-center gap-2 text-xs text-rose-300 font-medium">
+              <Heart className="w-3.5 h-3.5 fill-rose-300" aria-hidden="true" />
+              <span className="font-editorial italic text-sm">{STORE_INFO.tagline}</span>
             </div>
 
             {/* Social media handles */}
             <div className="pt-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider block mb-2">
+              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest block mb-2.5">
                 Redes Oficiales (@expresionsnew)
               </span>
               <div className="flex flex-wrap gap-2 text-xs">
@@ -51,10 +51,10 @@ export const Footer: React.FC<FooterProps> = ({
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white px-2.5 py-1 rounded transition-colors text-[11px]"
+                    className="inline-flex items-center gap-1.5 bg-stone-900/90 hover:bg-stone-800 text-stone-300 hover:text-white px-3 py-1.5 rounded-full transition-colors text-[11px] border border-stone-800 hover:border-stone-700"
                   >
                     <span>{social.platform}:</span>
-                    <strong className="text-emerald-400">{social.handle}</strong>
+                    <strong className="text-[#86EFAC]">{social.handle}</strong>
                   </a>
                 ))}
               </div>
@@ -176,10 +176,10 @@ export const Footer: React.FC<FooterProps> = ({
                   href={COMMERCIAL_DATA.contact.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#4E6B32] hover:bg-[#3D5528] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 bg-[#4E6B32] hover:bg-[#3D5324] text-white text-xs font-semibold px-5 py-2.5 rounded-full transition-all duration-200 active:scale-95 shadow-2xs min-h-[44px]"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  WhatsApp Directo (978 095 313)
+                  <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                  <span>WhatsApp Directo (978 095 313)</span>
                 </a>
               </div>
             </div>
